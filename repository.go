@@ -1181,6 +1181,25 @@ func (r *Repository) PushContext(ctx context.Context, o *PushOptions) error {
 		return err
 	}
 
+	tags, err := r.Tags()
+	if err != nil {
+		return err
+	}
+
+	tags.ForEach(func(reference *plumbing.Reference) error {
+		tag, err := object.GetTag(r.Storer, reference.Hash())
+		if err != nil {
+			return err
+		}
+
+		commit, err := tag.Commit()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Tag has: %+v\n", commit)
+		return nil
+	})
+
 	return remote.PushContext(ctx, o)
 }
 
