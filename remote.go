@@ -127,6 +127,7 @@ func (r *Remote) PushContext(ctx context.Context, o *PushOptions) (err error) {
 	isDelete := false
 	allDelete := true
 	for _, rs := range o.RefSpecs {
+		fmt.Printf("RefSpec: %v\n", rs.String())
 		if rs.IsDelete() {
 			isDelete = true
 		} else {
@@ -154,6 +155,18 @@ func (r *Remote) PushContext(ctx context.Context, o *PushOptions) (err error) {
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("local references: %+v\n", localRefs)
+	remoteRefsIter, err := remoteRefs.IterReferences()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("remote references:\n")
+	remoteRefsIter.ForEach(func(ref *plumbing.Reference) error {
+		fmt.Printf("remote ref: %v\n", ref.Strings())
+		return nil
+	})
 
 	req, err := r.newReferenceUpdateRequest(o, localRefs, remoteRefs, ar)
 	if err != nil {
@@ -1232,13 +1245,16 @@ outer:
 }
 
 func (r *Remote) checkRequireRemoteRefs(requires []config.RefSpec, remoteRefs storer.ReferenceStorer) error {
+	fmt.Printf("checkingrequiredremoterefs\n")
 	for _, require := range requires {
 		if require.IsWildcard() {
 			return fmt.Errorf("wildcards not supported in RequireRemoteRefs, got %s", require.String())
 		}
 
+		fmt.Printf("Require: %v\n", require.String())
 		name := require.Dst("")
 		remote, err := remoteRefs.Reference(name)
+		fmt.Printf("remote: %v\n", remote.String())
 		if err != nil {
 			return fmt.Errorf("remote ref %s required to be %s but is absent", name.String(), require.Src())
 		}
@@ -1258,5 +1274,6 @@ func (r *Remote) checkRequireRemoteRefs(requires []config.RefSpec, remoteRefs st
 			return fmt.Errorf("remote ref %s required to be %s but is %s", name.String(), requireHash, remote.Hash().String())
 		}
 	}
+	fmt.Printf("finished checkingrequiredremoterefs\n")
 	return nil
 }
